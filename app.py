@@ -12,7 +12,7 @@ import os
 YOUTUBE_API_KEY = "AIzaSyCLKr1GIScnbX_Dy8re-WGzCoj_qALiyyk"
 
 # Nama file sesuai Screenshot (94): nightflow-logo.png.png
-logo_path = "assets/nightflow-logo.png.png"
+logo_path = "nightflow-logo.png.png"
 
 st.set_page_config(
     page_title="Nightflow PRO Researcher",
@@ -161,5 +161,6 @@ if btn and query:
                 st.code(clean_tags_output(all_tags, is_shorts=True), language="text")
         else:
             st.error("Data tidak ditemukan. Cek keyword atau API Key anda.")
+
 
 st.markdown("<br><hr><center>Nightflow PRO • Final Fixed Version</center>", unsafe_allow_html=True)
