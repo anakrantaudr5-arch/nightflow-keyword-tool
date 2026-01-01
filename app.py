@@ -48,23 +48,31 @@ def clean_tags(tags, is_shorts=False):
 with streamlit_analytics.track():
     st.markdown("""
         <style>
-        /* 1. Hilangkan Header Streamlit (Tombol Share, GitHub, Star, dan Menu) */
-        header { visibility: hidden; height: 0px !important; }
-        footer { visibility: hidden; }
-        #MainMenu { visibility: hidden; }
+        /* 1. Paksa Hilangkan Header (Share, Star, GitHub, Menu) */
+        header, [data-testid="stHeader"] {
+            visibility: hidden !important;
+            height: 0px !important;
+            display: none !important;
+        }
         
-        /* 2. Hilangkan Sidebar dan Tombol Panah pojok kiri */
-        [data-testid="stSidebar"], [data-testid="stSidebarNav"], 
-        .st-emotion-cache-6qob1r, .st-emotion-cache-10o1hf7 {
+        /* 2. Paksa Hilangkan Sidebar & Tombol Panah pojok kiri */
+        [data-testid="stSidebar"], 
+        [data-testid="stSidebarNav"], 
+        .st-emotion-cache-6qob1r, 
+        .st-emotion-cache-10o1hf7,
+        button[kind="header_button"] {
             display: none !important;
         }
 
-        /* 3. Rapikan margin konten agar tidak ada celah kosong di atas */
+        /* 3. Hilangkan Footer 'Made with Streamlit' */
+        footer { visibility: hidden !important; }
+
+        /* 4. Rapikan margin konten agar logo mepet ke atas */
         .stAppViewMain {
             margin-top: -100px;
         }
 
-        /* 4. Styling Tema */
+        /* 5. Styling Tema Gelap */
         .stApp { background: #0c0c0c; color: white; }
         .neon-title { 
             color: #d200ff; 
