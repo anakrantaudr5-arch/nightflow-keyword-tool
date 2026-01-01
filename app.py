@@ -42,68 +42,72 @@ def clean_tags(tags, is_shorts=False):
     return " ".join(top_tags[:15])
 
 # ==========================================
-# 3. UI CLEANER (INSTRUKSI CSS KHUSUS)
+# 3. UI CLEANER (SANGAT AGRESIF)
 # ==========================================
 with streamlit_analytics.track():
     st.markdown("""
         <style>
-        /* 1. HILANGKAN TOTAL HEADER (Share, Star, GitHub, Menu) */
-        /* Menghilangkan seluruh bar navigasi atas */
-        [data-testid="stHeader"] {
-            display: none !important;
-        }
-        header {
+        /* HILANGKAN SEMUA ELEMEN BAWAAN STREAMLIT (HEADER & MENU) */
+        header, [data-testid="stHeader"], .st-emotion-cache-zq5wms, .st-emotion-cache-18ni7ap {
             visibility: hidden !important;
+            display: none !important;
+            height: 0px !important;
         }
-
-        /* 2. HILANGKAN SIDEBAR & TOMBOL PANAH POJOK KIRI */
+        
+        /* HILANGKAN SIDEBAR & TOMBOL PANAH */
         [data-testid="stSidebar"], [data-testid="stSidebarNav"], 
         .st-emotion-cache-6qob1r, .st-emotion-cache-10o1hf7, 
         button[kind="header_button"] {
             display: none !important;
         }
 
-        /* 3. HILANGKAN FOOTER 'MADE WITH STREAMLIT' */
+        /* HILANGKAN FOOTER BAWAAN */
         footer { visibility: hidden !important; }
 
-        /* 4. RAPIKAN MARGIN ATAS AGAR LOGO NAIK SEMPURNA */
-        .stAppViewMain { 
-            margin-top: -130px; 
-        }
+        /* RAPIKAN MARGIN ATAS */
+        .stAppViewMain { margin-top: -120px; }
 
-        /* 5. TEMA GELAP & TIPOGRAFI */
+        /* TEMA GELAP UTAMA */
         .stApp { background: #0c0c0c; color: white; }
         
+        /* JUDUL ATAS NEON */
         .neon-title { 
-            color: #d200ff; 
-            text-shadow: 0 0 15px #b700ff; 
+            color: white;
+            text-shadow: 0 0 10px #d200ff, 0 0 20px #d200ff, 0 0 40px #d200ff; 
             text-align: center; 
             font-weight: 900; 
             font-size: 45px; 
-            margin-bottom: 25px;
+            margin-bottom: 30px;
         }
 
-        /* 6. FOOTER NIGHTFLOW PRO (UKURAN RAKSASA & BERCAHAYA) */
-        .nightflow-footer {
+        /* FOOTER NIGHTFLOW PRO (WARNA NEON UNGU-PINK) */
+        .nightflow-footer-neon {
             text-align: center;
-            color: #d200ff;
-            font-size: 55px; /* Ukuran sangat besar sesuai permintaan */
+            font-size: 60px; /* Ukuran Raksasa */
             font-weight: 900;
-            text-shadow: 0 0 30px #b700ff;
+            color: white;
+            /* Efek Cahaya Neon Ungu yang Kuat */
+            text-shadow: 
+                0 0 7px #fff,
+                0 0 10px #fff,
+                0 0 21px #fff,
+                0 0 42px #d200ff,
+                0 0 82px #d200ff,
+                0 0 92px #d200ff,
+                0 0 102px #d200ff,
+                0 0 151px #d200ff;
             margin-top: 100px;
-            padding-bottom: 60px;
-            letter-spacing: 3px;
+            padding-bottom: 80px;
             text-transform: uppercase;
+            letter-spacing: 5px;
         }
 
-        /* STYLING TOMBOL */
+        /* STYLING TOMBOL & INPUT */
         .stButton>button { 
             background: linear-gradient(90deg, #d200ff, #8a00ff) !important; 
             color: white !important; 
             border:none; width:100%; font-weight:bold; height: 55px; border-radius:15px; 
         }
-
-        /* STYLING BOX SUBSCRIBE */
         .sub-box { 
             background-color: #1e1e1e; padding: 25px; border-radius: 20px; 
             border: 2px solid #ff0000; text-align: center; margin-bottom: 25px; 
@@ -111,16 +115,16 @@ with streamlit_analytics.track():
         </style>
     """, unsafe_allow_html=True)
 
-    # --- BAGIAN LOGO (Diletakkan di Tengah) ---
+    # --- LOGO TENGAH ---
     if os.path.exists(logo_path):
         _, col_logo, _ = st.columns([1.5, 1, 1.5])
         with col_logo:
             st.image(logo_path, use_container_width=True)
 
-    # --- JUDUL UTAMA ---
+    # --- JUDUL ---
     st.markdown('<h1 class="neon-title">Nightflow Keyword Researcher PRO</h1>', unsafe_allow_html=True)
     
-    # --- KOLOM PENCARIAN ---
+    # --- SEARCH ---
     query = st.text_input("", placeholder="Masukkan keyword pencarian...")
     
     if st.button("START RESEARCH 🚀") and query:
@@ -138,7 +142,7 @@ with streamlit_analytics.track():
         """, unsafe_allow_html=True)
 
         if st.checkbox("Saya sudah subscribe ✅"):
-            with st.spinner("Sedang mencari data terbaik..."):
+            with st.spinner("Sedang meriset YouTube..."):
                 search_url = "https://www.googleapis.com/youtube/v3/search"
                 s_params = {"part": "id", "q": query, "type": "video", "maxResults": 10, "key": YOUTUBE_API_KEY}
                 res = requests.get(search_url, params=s_params).json()
@@ -158,10 +162,9 @@ with streamlit_analytics.track():
                         results.append({
                             "Judul": item["snippet"]["title"],
                             "Views": f"{int(item['statistics'].get('viewCount', 0)):,}",
-                            "LINK AKSES": link_duit
+                            "LINK": link_duit
                         })
 
-                    # Tampilan Tabel
                     st.dataframe(pd.DataFrame(results), use_container_width=True)
                     
                     c1, c2 = st.columns(2)
@@ -172,5 +175,5 @@ with streamlit_analytics.track():
                         st.subheader("📱 Tag Shorts")
                         st.code(clean_tags(all_tags, is_shorts=True), language="text")
 
-    # --- FOOTER AKHIR (HANYA TEKS BESAR) ---
-    st.markdown('<div class="nightflow-footer">Nightflow PRO</div>', unsafe_allow_html=True)
+    # --- FOOTER FINAL NEON RAKSASA ---
+    st.markdown('<div class="nightflow-footer-neon">NIGHTFLOW PRO</div>', unsafe_allow_html=True)
