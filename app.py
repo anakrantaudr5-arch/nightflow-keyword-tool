@@ -9,7 +9,7 @@ import os
 # ==========================================
 # 1. SETUP & KONFIGURASI UTAMA
 # ==========================================
-YOUTUBE_API_KEY = "AIzaSyCLKr1GIScnbX_Dy8re-WGzCoj_qALiyyk"
+YOUTUBE_API_KEY = st.secrets["YOUTUBE_API_KEY"]
 
 # Nama file sesuai Screenshot (94): nightflow-logo.png.png
 logo_path = "nightflow-logo.png.png"
@@ -164,3 +164,4 @@ if btn and query:
 
 
 st.markdown("<br><hr><center>Nightflow PRO • Final Fixed Version</center>", unsafe_allow_html=True)
+
