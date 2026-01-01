@@ -47,7 +47,7 @@ def clean_tags(tags, is_shorts=False):
 with streamlit_analytics.track():
     st.markdown("""
         <style>
-        /* HILANGKAN SEMUA ELEMEN BAWAAN STREAMLIT (HEADER & MENU) */
+        /* HILANGKAN TOTAL HEADER (Share, Star, GitHub, Menu) */
         header, [data-testid="stHeader"], .st-emotion-cache-zq5wms, .st-emotion-cache-18ni7ap {
             visibility: hidden !important;
             display: none !important;
@@ -80,22 +80,18 @@ with streamlit_analytics.track():
             margin-bottom: 30px;
         }
 
-        /* FOOTER NIGHTFLOW PRO (WARNA NEON UNGU-PINK) */
+        /* FOOTER NIGHTFLOW PRO (WARNA NEON UNGU-PINK UKURAN 40PX) */
         .nightflow-footer-neon {
             text-align: center;
-            font-size: 60px; /* Ukuran Raksasa */
+            font-size: 40px; /* Ukuran disesuaikan menjadi 40px */
             font-weight: 900;
             color: white;
-            /* Efek Cahaya Neon Ungu yang Kuat */
             text-shadow: 
                 0 0 7px #fff,
                 0 0 10px #fff,
-                0 0 21px #fff,
+                0 0 21px #d200ff,
                 0 0 42px #d200ff,
-                0 0 82px #d200ff,
-                0 0 92px #d200ff,
-                0 0 102px #d200ff,
-                0 0 151px #d200ff;
+                0 0 82px #d200ff;
             margin-top: 100px;
             padding-bottom: 80px;
             text-transform: uppercase;
@@ -175,5 +171,5 @@ with streamlit_analytics.track():
                         st.subheader("📱 Tag Shorts")
                         st.code(clean_tags(all_tags, is_shorts=True), language="text")
 
-    # --- FOOTER FINAL NEON RAKSASA ---
+    # --- FOOTER FINAL NEON 40PX ---
     st.markdown('<div class="nightflow-footer-neon">NIGHTFLOW PRO</div>', unsafe_allow_html=True)
