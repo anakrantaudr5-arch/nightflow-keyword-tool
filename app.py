@@ -50,16 +50,17 @@ with streamlit_analytics.track():
     st.markdown("""
         <style>
         .stApp { background: #0c0c0c; color: white; }
+        /* Sembunyikan Sidebar secara total */
+        [data-testid="stSidebar"] { display: none; }
+        [data-testid="stSidebarNav"] { display: none; }
+        
         .neon-title { color: #d200ff; text-shadow: 0 0 15px #b700ff; text-align: center; font-weight: 900; font-size: 45px; margin-top: 10px; }
         .stButton>button { background: linear-gradient(90deg, #d200ff, #8a00ff) !important; color: white !important; border:none; width:100%; font-weight:bold; height: 50px; border-radius:15px; }
         .sub-box { background-color: #1e1e1e; padding: 20px; border-radius: 15px; border: 1px solid #ff0000; text-align: center; margin-bottom: 20px; }
-        /* Memastikan logo berada di tengah */
-        .logo-container { display: flex; justify-content: center; margin-bottom: -20px; }
         </style>
     """, unsafe_allow_html=True)
 
-    # --- BAGIAN LOGO & JUDUL UTAMA ---
-    # Logo dipindahkan ke sini (Tengah atas)
+    # --- BAGIAN LOGO & JUDUL UTAMA (TENGAH) ---
     if os.path.exists(logo_path):
         col_logo_1, col_logo_2, col_logo_3 = st.columns([2, 1, 2])
         with col_logo_2:
@@ -67,13 +68,6 @@ with streamlit_analytics.track():
 
     st.markdown('<h1 class="neon-title">Nightflow Keyword Researcher PRO</h1>', unsafe_allow_html=True)
     
-    # --- SIDEBAR (DIBERSIHKAN) ---
-    with st.sidebar:
-        st.title("Nightflow Studio")
-        st.write("Versi PRO 1.0")
-        st.markdown("---")
-        st.caption("Alat riset kata kunci otomatis dengan sistem monetisasi.")
-
     # --- INPUT USER ---
     query = st.text_input("", placeholder="Masukkan keyword (contoh: pop punk guitar tutorial)")
     
@@ -137,4 +131,4 @@ with streamlit_analytics.track():
                     st.error("Data tidak ditemukan.")
 
     st.markdown("---")
-    st.caption("Gunakan ?analytics=on di URL untuk melihat catatan pengunjung.")
+    st.caption("Nightflow PRO • Gunakan ?analytics=on di URL untuk melihat catatan pengunjung.")
