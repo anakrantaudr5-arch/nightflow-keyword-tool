@@ -50,18 +50,21 @@ def clean_tags(tags, is_shorts=False):
 with streamlit_analytics.track():
     st.markdown("""
         <style>
-        /* MENGHILANGKAN SIDEBAR SECARA TOTAL */
-        [data-testid="stSidebar"], [data-testid="stSidebarNav"], 
-        button[kind="header_button"], .st-emotion-cache-10o1hf7 {
+        /* 1. MENGHILANGKAN SIDEBAR & TOMBOL NAVIGASI SECARA TOTAL */
+        [data-testid="stSidebar"], 
+        [data-testid="stSidebarNav"], 
+        .st-emotion-cache-6qob1r, 
+        .st-emotion-cache-10o1hf7,
+        button[kind="header_button"] {
             display: none !important;
         }
-        
-        /* Menghilangkan padding agar konten lebih luas */
+
+        /* 2. MENGHILANGKAN JARAK KOSONG DI ATAS */
         .stAppViewMain {
-            margin-top: -70px;
+            margin-top: -80px;
         }
 
-        /* Styling Tema Gelap & Neon */
+        /* 3. TEMA GELAP & NEON */
         .stApp { background: #0c0c0c; color: white; }
         
         .neon-title { 
@@ -70,8 +73,8 @@ with streamlit_analytics.track():
             text-align: center; 
             font-weight: 900; 
             font-size: 45px; 
-            margin-top: 20px;
-            margin-bottom: 30px;
+            margin-top: 10px;
+            margin-bottom: 20px;
         }
         
         .stButton>button { 
@@ -82,12 +85,6 @@ with streamlit_analytics.track():
             font-weight:bold; 
             height: 55px; 
             border-radius:15px; 
-            transition: 0.3s;
-        }
-        
-        .stButton>button:hover {
-            transform: scale(1.02);
-            box-shadow: 0 0 20px #d200ff;
         }
 
         .sub-box { 
@@ -96,50 +93,50 @@ with streamlit_analytics.track():
             border-radius: 20px; 
             border: 2px solid #ff0000; 
             text-align: center; 
-            margin-top: 20px;
             margin-bottom: 25px; 
         }
         </style>
     """, unsafe_allow_html=True)
 
     # --- BAGIAN LOGO (TENGAH ATAS) ---
+    # Menggunakan sistem kolom untuk memastikan logo di tengah
     if os.path.exists(logo_path):
-        _, col_logo, _ = st.columns([1.5, 1, 1.5])
-        with col_logo:
+        col_1, col_2, col_3 = st.columns([1.5, 1, 1.5])
+        with col_2:
             st.image(logo_path, use_container_width=True)
 
     # --- JUDUL UTAMA ---
     st.markdown('<h1 class="neon-title">Nightflow Keyword Researcher PRO</h1>', unsafe_allow_html=True)
     
     # --- INPUT USER ---
-    query = st.text_input("", placeholder="Masukkan keyword (contoh: pop punk guitar tutorial)", help="Ketik keyword dan tekan Start Research")
+    query = st.text_input("", placeholder="Masukkan keyword (contoh: pop punk guitar tutorial)")
     
     if st.button("START RESEARCH 🚀") and query:
         # TAMPILAN BOX SUBSCRIBE
         subscribe_link = "https://youtube.com/@nightflowpoppunk?sub_confirmation=1"
         st.markdown(f"""
             <div class="sub-box">
-                <h2 style="color: #ff0000; margin-top: 0;">🔴 SUBSCRIBE REQUIRED</h2>
-                <p style="color: white; font-size: 18px;">Silakan <b>Subscribe</b> channel Nightflow Pop Punk terlebih dahulu untuk membuka database hasil riset.</p>
+                <h2 style="color: #ff0000; margin-top: 0;">🔴 SUBSCRIBE UNTUK MEMBUKA DATA</h2>
+                <p style="color: white;">Silakan <b>Subscribe</b> channel Nightflow Pop Punk agar hasil riset muncul di bawah.</p>
                 <a href="{subscribe_link}" target="_blank" style="text-decoration: none;">
-                    <button style="background-color: #ff0000; color: white; border: none; padding: 15px 30px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 18px; margin-top: 10px;">
+                    <button style="background-color: #ff0000; color: white; border: none; padding: 15px 30px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 16px;">
                         KLIK UNTUK SUBSCRIBE
                     </button>
                 </a>
             </div>
         """, unsafe_allow_html=True)
 
-        # CHECKBOX UNLOCK
-        if st.checkbox("Saya sudah klik subscribe (Centang untuk melihat data) ✅"):
-            with st.spinner("Sedang meriset YouTube & Mengamankan Link..."):
-                # Step 1: Cari Video via YouTube API
+        # CHECKBOX KONFIRMASI
+        if st.checkbox("Saya sudah klik subscribe ✅"):
+            with st.spinner("Meriset YouTube & Memproses Link Berbayar..."):
+                # YouTube Search API
                 search_url = "https://www.googleapis.com/youtube/v3/search"
                 s_params = {"part": "id", "q": query, "type": "video", "maxResults": 10, "key": YOUTUBE_API_KEY}
                 search_res = requests.get(search_url, params=s_params).json()
                 v_ids = [i["id"]["videoId"] for i in search_res.get("items", [])]
 
                 if v_ids:
-                    # Step 2: Ambil Detail (Views & Hashtags)
+                    # Video Detail API
                     d_url = "https://www.googleapis.com/youtube/v3/videos"
                     d_params = {"part": "snippet,statistics", "id": ",".join(v_ids), "key": YOUTUBE_API_KEY}
                     items = requests.get(d_url, params=d_params).json().get("items", [])
@@ -150,35 +147,32 @@ with streamlit_analytics.track():
                     for item in items:
                         snip = item["snippet"]
                         stat = item["statistics"]
-                        desc = snip.get("description", "")
-                        tags = re.findall(r"#(\w+)", desc.lower())
+                        tags = re.findall(r"#(\w+)", snip.get("description", "").lower())
                         all_tags.extend(tags)
                         
                         link_yt = f"https://youtube.com/watch?v={item['id']}"
-                        # MONETISASI: Link YouTube asli diubah ke Safelinku
-                        link_berbayar = get_safelink(link_yt)
+                        link_duit = get_safelink(link_yt)
                         
                         final_data.append({
                             "Judul Video": snip["title"],
                             "Views": f"{int(stat.get('viewCount', 0)):,}",
-                            "AKSES VIDEO (Unlock)": link_berbayar
+                            "AKSES VIDEO": link_duit
                         })
 
-                    # TAMPILKAN TABEL HASIL
-                    st.subheader("🎬 Hasil Riset (Link Berbayar)")
+                    # TAMPILKAN HASIL
+                    st.subheader("🎬 Hasil Riset")
                     st.dataframe(pd.DataFrame(final_data), use_container_width=True)
 
-                    # TAMPILKAN HASHTAG
-                    col1, col2 = st.columns(2)
-                    with col1:
+                    c1, c2 = st.columns(2)
+                    with c1:
                         st.subheader("🏷️ Tag Long Video")
                         st.code(clean_tags(all_tags), language="text")
-                    with col2:
+                    with c2:
                         st.subheader("📱 Tag Shorts")
                         st.code(clean_tags(all_tags, is_shorts=True), language="text")
                     st.balloons()
                 else:
-                    st.error("Data tidak ditemukan. Silakan coba keyword lain.")
+                    st.error("Data tidak ditemukan.")
 
     st.markdown("<br><br><hr>", unsafe_allow_html=True)
-    st.caption("Nightflow Studio PRO • Monetisasi & Analytics Aktif • Gunakan ?analytics=on untuk melihat log pengunjung.")
+    st.caption("Nightflow PRO • Gunakan ?analytics=on untuk melihat log pengunjung.")
