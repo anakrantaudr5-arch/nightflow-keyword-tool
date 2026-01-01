@@ -48,14 +48,14 @@ def clean_tags(tags, is_shorts=False):
 with streamlit_analytics.track():
     st.markdown("""
         <style>
-        /* 1. Paksa Hilangkan Header (Share, Star, GitHub, Menu) */
+        /* 1. Hilangkan Header Streamlit secara total */
         header, [data-testid="stHeader"] {
             visibility: hidden !important;
             height: 0px !important;
             display: none !important;
         }
         
-        /* 2. Paksa Hilangkan Sidebar & Tombol Panah pojok kiri */
+        /* 2. Hilangkan Sidebar dan Tombol Navigasi */
         [data-testid="stSidebar"], 
         [data-testid="stSidebarNav"], 
         .st-emotion-cache-6qob1r, 
@@ -64,16 +64,17 @@ with streamlit_analytics.track():
             display: none !important;
         }
 
-        /* 3. Hilangkan Footer 'Made with Streamlit' */
+        /* 3. Hilangkan Footer bawaan Streamlit */
         footer { visibility: hidden !important; }
 
-        /* 4. Rapikan margin konten agar logo mepet ke atas */
+        /* 4. Rapikan margin atas */
         .stAppViewMain {
             margin-top: -100px;
         }
 
-        /* 5. Styling Tema Gelap */
+        /* 5. Styling Tema */
         .stApp { background: #0c0c0c; color: white; }
+        
         .neon-title { 
             color: #d200ff; 
             text-shadow: 0 0 15px #b700ff; 
@@ -82,6 +83,17 @@ with streamlit_analytics.track():
             font-size: 45px; 
             margin-bottom: 25px;
         }
+
+        /* Gaya Khusus Footer Nightflow PRO */
+        .nightflow-footer {
+            text-align: center;
+            color: #d200ff;
+            font-size: 28px; /* Ukuran diperbesar */
+            font-weight: bold;
+            text-shadow: 0 0 10px #b700ff;
+            margin-top: 50px;
+        }
+
         .stButton>button { 
             background: linear-gradient(90deg, #d200ff, #8a00ff) !important; 
             color: white !important; 
@@ -91,6 +103,7 @@ with streamlit_analytics.track():
             height: 55px; 
             border-radius:15px; 
         }
+
         .sub-box { 
             background-color: #1e1e1e; 
             padding: 25px; 
@@ -115,7 +128,6 @@ with streamlit_analytics.track():
     query = st.text_input("", placeholder="Masukkan keyword (contoh: pop punk guitar tutorial)")
     
     if st.button("START RESEARCH 🚀") and query:
-        # SUBSCRIBE BOX
         sub_link = "https://youtube.com/@nightflowpoppunk?sub_confirmation=1"
         st.markdown(f"""
             <div class="sub-box">
@@ -166,5 +178,5 @@ with streamlit_analytics.track():
                 else:
                     st.error("Data tidak ditemukan.")
 
-    st.markdown("<br><br><hr>", unsafe_allow_html=True)
-    st.caption("Nightflow PRO • Gunakan ?analytics=on di URL untuk melihat log pengunjung.")
+    # --- FOOTER BARU (TEKS DIPERBESAR & ANALYTICS DIHAPUS) ---
+    st.markdown('<div class="nightflow-footer">Nightflow PRO</div>', unsafe_allow_html=True)
