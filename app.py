@@ -26,7 +26,6 @@ st.set_page_config(
 # ==========================================
 
 def get_safelink(long_url):
-    """Fungsi mengubah link YouTube jadi Duit via Safelinku"""
     api_url = f"https://api.safelinku.com/shorten?key={SAFELINKU_API_KEY}&url={long_url}"
     try:
         res = requests.get(api_url).json()
@@ -51,33 +50,39 @@ with streamlit_analytics.track():
     st.markdown("""
         <style>
         .stApp { background: #0c0c0c; color: white; }
-        .neon-title { color: #d200ff; text-shadow: 0 0 15px #b700ff; text-align: center; font-weight: 900; font-size: 45px; }
+        .neon-title { color: #d200ff; text-shadow: 0 0 15px #b700ff; text-align: center; font-weight: 900; font-size: 45px; margin-top: 10px; }
         .stButton>button { background: linear-gradient(90deg, #d200ff, #8a00ff) !important; color: white !important; border:none; width:100%; font-weight:bold; height: 50px; border-radius:15px; }
         .sub-box { background-color: #1e1e1e; padding: 20px; border-radius: 15px; border: 1px solid #ff0000; text-align: center; margin-bottom: 20px; }
+        /* Memastikan logo berada di tengah */
+        .logo-container { display: flex; justify-content: center; margin-bottom: -20px; }
         </style>
     """, unsafe_allow_html=True)
 
-    # Sidebar
-    with st.sidebar:
-        if os.path.exists(logo_path):
+    # --- BAGIAN LOGO & JUDUL UTAMA ---
+    # Logo dipindahkan ke sini (Tengah atas)
+    if os.path.exists(logo_path):
+        col_logo_1, col_logo_2, col_logo_3 = st.columns([2, 1, 2])
+        with col_logo_2:
             st.image(logo_path, use_container_width=True)
-        st.title("Nightflow Studio")
-        st.markdown("---")
-        st.write("📊 **Status Monetisasi: AKTIF**")
-        st.write("🔴 **Channel: Nightflow Pop Punk**")
-        st.caption("Klik pada link hasil riset membantu mendukung kami.")
 
     st.markdown('<h1 class="neon-title">Nightflow Keyword Researcher PRO</h1>', unsafe_allow_html=True)
     
+    # --- SIDEBAR (DIBERSIHKAN) ---
+    with st.sidebar:
+        st.title("Nightflow Studio")
+        st.write("Versi PRO 1.0")
+        st.markdown("---")
+        st.caption("Alat riset kata kunci otomatis dengan sistem monetisasi.")
+
+    # --- INPUT USER ---
     query = st.text_input("", placeholder="Masukkan keyword (contoh: pop punk guitar tutorial)")
     
     if st.button("START RESEARCH 🚀") and query:
-        # TAMPILAN BOX SUBSCRIBE
         subscribe_link = "https://youtube.com/@nightflowpoppunk?sub_confirmation=1"
         st.markdown(f"""
             <div class="sub-box">
                 <h3 style="color: white; margin-top: 0;">📢 Langkah Terakhir!</h3>
-                <p style="color: #cccccc;">Silakan <b>Subscribe</b> channel Nightflow Pop Punk untuk membuka hasil riset & mendukung tool ini tetap gratis.</p>
+                <p style="color: #cccccc;">Silakan <b>Subscribe</b> channel Nightflow Pop Punk untuk membuka hasil riset.</p>
                 <a href="{subscribe_link}" target="_blank" style="text-decoration: none;">
                     <button style="background-color: #ff0000; color: white; border: none; padding: 12px 25px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 16px;">
                         🔴 KLIK UNTUK SUBSCRIBE
@@ -86,17 +91,14 @@ with streamlit_analytics.track():
             </div>
         """, unsafe_allow_html=True)
 
-        # CHECKBOX KONFIRMASI
         if st.checkbox("Saya sudah subscribe (Centang untuk melihat data) ✅"):
-            with st.spinner("Mengambil data YouTube & Menghasilkan Link Berbayar..."):
-                # Step 1: Cari Video
+            with st.spinner("Sedang meriset YouTube..."):
                 search_url = "https://www.googleapis.com/youtube/v3/search"
                 s_params = {"part": "id", "q": query, "type": "video", "maxResults": 10, "key": YOUTUBE_API_KEY}
                 search_res = requests.get(search_url, params=s_params).json()
                 v_ids = [i["id"]["videoId"] for i in search_res.get("items", [])]
 
                 if v_ids:
-                    # Step 2: Ambil Detail & Hashtag
                     d_url = "https://www.googleapis.com/youtube/v3/videos"
                     d_params = {"part": "snippet,statistics", "id": ",".join(v_ids), "key": YOUTUBE_API_KEY}
                     items = requests.get(d_url, params=d_params).json().get("items", [])
@@ -112,16 +114,14 @@ with streamlit_analytics.track():
                         all_tags.extend(tags)
                         
                         link_yt = f"https://youtube.com/watch?v={item['id']}"
-                        # PROSES LINK JADI DUIT
                         link_berbayar = get_safelink(link_yt)
                         
                         final_data.append({
                             "Judul Video": snip["title"],
                             "Views": f"{int(stat.get('viewCount', 0)):,}",
-                            "AKSES VIDEO (Dapatkan Uang)": link_berbayar
+                            "AKSES VIDEO": link_berbayar
                         })
 
-                    # TAMPILKAN TABEL & HASHTAG
                     st.subheader("🎬 Hasil Riset (Link Berbayar)")
                     st.dataframe(pd.DataFrame(final_data), use_container_width=True)
 
@@ -134,7 +134,7 @@ with streamlit_analytics.track():
                         st.code(clean_tags(all_tags, is_shorts=True), language="text")
                     st.balloons()
                 else:
-                    st.error("Data tidak ditemukan. Cek keyword atau kuota API YouTube kamu.")
+                    st.error("Data tidak ditemukan.")
 
     st.markdown("---")
     st.caption("Gunakan ?analytics=on di URL untuk melihat catatan pengunjung.")
