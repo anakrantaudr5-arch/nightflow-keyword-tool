@@ -23,7 +23,6 @@ st.set_page_config(
 # ==========================================
 # 2. FUNGSI LOGIKA
 # ==========================================
-
 def get_safelink(long_url):
     api_url = f"https://api.safelinku.com/shorten?key={SAFELINKU_API_KEY}&url={long_url}"
     try:
@@ -43,33 +42,38 @@ def clean_tags(tags, is_shorts=False):
     return " ".join(top_tags[:15])
 
 # ==========================================
-# 3. UI CLEANER (ULTRA AGGRESSIVE)
+# 3. UI CLEANER (INSTRUKSI CSS KHUSUS)
 # ==========================================
 with streamlit_analytics.track():
     st.markdown("""
         <style>
-        /* MENGHILANGKAN HEADER, SHARE, STAR, GITHUB, MENU SECARA TOTAL */
-        header, [data-testid="stHeader"], .st-emotion-cache-zq5wms, .st-emotion-cache-18ni7ap {
-            visibility: hidden !important;
+        /* 1. HILANGKAN TOTAL HEADER (Share, Star, GitHub, Menu) */
+        /* Menghilangkan seluruh bar navigasi atas */
+        [data-testid="stHeader"] {
             display: none !important;
-            height: 0px !important;
         }
-        
-        /* MENGHILANGKAN SIDEBAR & TOMBOL PANAH */
+        header {
+            visibility: hidden !important;
+        }
+
+        /* 2. HILANGKAN SIDEBAR & TOMBOL PANAH POJOK KIRI */
         [data-testid="stSidebar"], [data-testid="stSidebarNav"], 
         .st-emotion-cache-6qob1r, .st-emotion-cache-10o1hf7, 
         button[kind="header_button"] {
             display: none !important;
         }
 
-        /* MENGHILANGKAN FOOTER STREAMLIT */
+        /* 3. HILANGKAN FOOTER 'MADE WITH STREAMLIT' */
         footer { visibility: hidden !important; }
 
-        /* MERAPIKAN MARGIN ATAS */
-        .stAppViewMain { margin-top: -110px; }
+        /* 4. RAPIKAN MARGIN ATAS AGAR LOGO NAIK SEMPURNA */
+        .stAppViewMain { 
+            margin-top: -130px; 
+        }
 
-        /* TEMA GELAP & NEON */
+        /* 5. TEMA GELAP & TIPOGRAFI */
         .stApp { background: #0c0c0c; color: white; }
+        
         .neon-title { 
             color: #d200ff; 
             text-shadow: 0 0 15px #b700ff; 
@@ -79,23 +83,27 @@ with streamlit_analytics.track():
             margin-bottom: 25px;
         }
 
-        /* FOOTER NIGHTFLOW PRO (DIPERBESAR) */
+        /* 6. FOOTER NIGHTFLOW PRO (UKURAN RAKSASA & BERCAHAYA) */
         .nightflow-footer {
             text-align: center;
             color: #d200ff;
-            font-size: 40px; /* Sangat besar sesuai permintaan */
+            font-size: 55px; /* Ukuran sangat besar sesuai permintaan */
             font-weight: 900;
-            text-shadow: 0 0 20px #b700ff;
-            margin-top: 60px;
-            padding-bottom: 40px;
+            text-shadow: 0 0 30px #b700ff;
+            margin-top: 100px;
+            padding-bottom: 60px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
         }
 
+        /* STYLING TOMBOL */
         .stButton>button { 
             background: linear-gradient(90deg, #d200ff, #8a00ff) !important; 
             color: white !important; 
             border:none; width:100%; font-weight:bold; height: 55px; border-radius:15px; 
         }
 
+        /* STYLING BOX SUBSCRIBE */
         .sub-box { 
             background-color: #1e1e1e; padding: 25px; border-radius: 20px; 
             border: 2px solid #ff0000; text-align: center; margin-bottom: 25px; 
@@ -103,22 +111,24 @@ with streamlit_analytics.track():
         </style>
     """, unsafe_allow_html=True)
 
-    # --- LOGO (TENGAH) ---
+    # --- BAGIAN LOGO (Diletakkan di Tengah) ---
     if os.path.exists(logo_path):
         _, col_logo, _ = st.columns([1.5, 1, 1.5])
         with col_logo:
             st.image(logo_path, use_container_width=True)
 
+    # --- JUDUL UTAMA ---
     st.markdown('<h1 class="neon-title">Nightflow Keyword Researcher PRO</h1>', unsafe_allow_html=True)
     
-    query = st.text_input("", placeholder="Masukkan keyword (contoh: pop punk guitar tutorial)")
+    # --- KOLOM PENCARIAN ---
+    query = st.text_input("", placeholder="Masukkan keyword pencarian...")
     
     if st.button("START RESEARCH 🚀") and query:
         sub_link = "https://youtube.com/@nightflowpoppunk?sub_confirmation=1"
         st.markdown(f"""
             <div class="sub-box">
                 <h2 style="color: #ff0000; margin-top: 0;">🔴 SUBSCRIBE REQUIRED</h2>
-                <p>Silakan <b>Subscribe</b> channel Nightflow Pop Punk untuk membuka data.</p>
+                <p>Silakan <b>Subscribe</b> channel Nightflow Pop Punk untuk melihat hasil riset.</p>
                 <a href="{sub_link}" target="_blank">
                     <button style="background-color: #ff0000; color: white; border: none; padding: 12px 25px; border-radius: 8px; font-weight: bold; cursor: pointer;">
                         KLIK UNTUK SUBSCRIBE
@@ -128,7 +138,7 @@ with streamlit_analytics.track():
         """, unsafe_allow_html=True)
 
         if st.checkbox("Saya sudah subscribe ✅"):
-            with st.spinner("Meriset YouTube..."):
+            with st.spinner("Sedang mencari data terbaik..."):
                 search_url = "https://www.googleapis.com/youtube/v3/search"
                 s_params = {"part": "id", "q": query, "type": "video", "maxResults": 10, "key": YOUTUBE_API_KEY}
                 res = requests.get(search_url, params=s_params).json()
@@ -146,21 +156,21 @@ with streamlit_analytics.track():
                         all_tags.extend(tags)
                         link_duit = get_safelink(f"https://youtube.com/watch?v={item['id']}")
                         results.append({
-                            "Judul Video": item["snippet"]["title"],
+                            "Judul": item["snippet"]["title"],
                             "Views": f"{int(item['statistics'].get('viewCount', 0)):,}",
-                            "AKSES VIDEO": link_duit
+                            "LINK AKSES": link_duit
                         })
 
-                    st.subheader("🎬 Hasil Riset")
+                    # Tampilan Tabel
                     st.dataframe(pd.DataFrame(results), use_container_width=True)
-
+                    
                     c1, c2 = st.columns(2)
                     with c1:
-                        st.subheader("🏷️ Tag Long Video")
+                        st.subheader("🏷️ Tag Video")
                         st.code(clean_tags(all_tags), language="text")
                     with c2:
                         st.subheader("📱 Tag Shorts")
                         st.code(clean_tags(all_tags, is_shorts=True), language="text")
 
-    # --- FOOTER ---
+    # --- FOOTER AKHIR (HANYA TEKS BESAR) ---
     st.markdown('<div class="nightflow-footer">Nightflow PRO</div>', unsafe_allow_html=True)
