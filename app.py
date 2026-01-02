@@ -10,11 +10,11 @@ from st_copy_to_clipboard import st_copy_to_clipboard
 # 1. KONFIGURASI & SECRETS
 # ==========================================
 try:
-    # Membaca key dari Secrets Streamlit Cloud (Sesuai Screenshot 108 Anda)
+    # Memastikan API Key terbaca dari Secrets Streamlit Cloud
     YOUTUBE_API_KEY = st.secrets["YOUTUBE_API_KEY"]
     SAFELINKU_API_KEY = st.secrets["SAFELINKU_API_KEY"]
 except Exception:
-    st.error("⚠️ Secrets belum terdeteksi. Pastikan Anda sudah mengklik 'Save changes' di menu Secrets.")
+    st.error("⚠️ Secrets belum terdeteksi. Pastikan Anda sudah mengklik 'Save changes' di menu Secrets Streamlit.")
     st.stop()
 
 logo_path = "nightflow-logo.png.png"
@@ -48,11 +48,11 @@ def clean_tags(tags, is_shorts=False):
     return " ".join(top_tags[:15])
 
 # ==========================================
-# 3. UI STYLING (THEMA NIGHTFLOW PRO)
+# 3. UI STYLING (NEON THEME)
 # ==========================================
 st.markdown("""
     <style>
-    /* Sembunyikan Header & Sidebar untuk tampilan Mobile Apps */
+    /* Sembunyikan Header & Sidebar agar rapi di Android */
     header, [data-testid="stHeader"], .st-emotion-cache-zq5wms, .st-emotion-cache-18ni7ap {
         visibility: hidden !important; display: none !important; height: 0px !important;
     }
@@ -61,7 +61,7 @@ st.markdown("""
     }
     footer { visibility: hidden !important; }
 
-    /* Tema Gelap & Layout */
+    /* Tema Gelap */
     .stApp { background: #0c0c0c; color: white; margin-top: -80px; }
     
     .neon-title { 
@@ -76,7 +76,7 @@ st.markdown("""
         color: white !important; border:none; width:100%; font-weight:bold; height: 55px; border-radius:15px; 
     }
 
-    /* Footer Nightflow PRO (Teks 40px) */
+    /* Footer Nightflow PRO (40px) */
     .nightflow-footer-container {
         margin-top: 350px; 
         padding-bottom: 100px;
@@ -90,7 +90,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- LOGO & JUDUL ---
+# --- HEADER ---
 if os.path.exists(logo_path):
     _, col_logo, _ = st.columns([1.5, 1, 1.5])
     with col_logo:
@@ -98,13 +98,13 @@ if os.path.exists(logo_path):
 
 st.markdown('<h1 class="neon-title">Nightflow Keyword Researcher PRO</h1>', unsafe_allow_html=True)
 
-# --- AREA INPUT ---
+# --- INPUT ---
 query = st.text_input("", placeholder="Masukkan keyword pencarian...")
 
 if st.button("START RESEARCH 🚀") and query:
-    with st.spinner("Mereset data terbaik..."):
+    with st.spinner("Mencari data terbaik..."):
         try:
-            # Panggil YouTube API
+            # 1. YouTube Search API
             search_url = "https://www.googleapis.com/youtube/v3/search"
             s_params = {"part": "id", "q": query, "type": "video", "maxResults": 10, "key": YOUTUBE_API_KEY}
             search_res = requests.get(search_url, params=s_params).json()
@@ -115,6 +115,7 @@ if st.button("START RESEARCH 🚀") and query:
                 v_ids = [i["id"]["videoId"] for i in search_res.get("items", [])]
 
                 if v_ids:
+                    # 2. Detail Video API
                     d_url = "https://www.googleapis.com/youtube/v3/videos"
                     d_params = {"part": "snippet,statistics", "id": ",".join(v_ids), "key": YOUTUBE_API_KEY}
                     items = requests.get(d_url, params=d_params).json().get("items", [])
@@ -131,7 +132,7 @@ if st.button("START RESEARCH 🚀") and query:
                             "AKSES VIDEO": link_duit
                         })
 
-                    # Tampilkan Tabel
+                    # Tampilkan Tabel Hasil
                     st.subheader("🎬 Hasil Riset")
                     st.dataframe(pd.DataFrame(results), use_container_width=True)
 
@@ -142,13 +143,17 @@ if st.button("START RESEARCH 🚀") and query:
                         st.subheader("🏷️ Tag Long Video")
                         tags_long = clean_tags(all_tags)
                         st.code(tags_long, language="text")
-                        st_copy_to_clipboard(tags_long, before_text="Salin Tag 📋", after_text="Tersalin! ✅")
+                        # Memperbaiki error dengan menghapus argumen 'before_text'
+                        st_copy_to_clipboard(tags_long) 
+                        st.caption("Klik tombol di atas untuk menyalin Tag Video")
 
                     with c2:
                         st.subheader("📱 Tag Shorts")
                         tags_shorts = clean_tags(all_tags, is_shorts=True)
                         st.code(tags_shorts, language="text")
-                        st_copy_to_clipboard(tags_shorts, before_text="Salin Tag Shorts 📋", after_text="Tersalin! ✅")
+                        # Memperbaiki error dengan menghapus argumen 'before_text'
+                        st_copy_to_clipboard(tags_shorts)
+                        st.caption("Klik tombol di atas untuk menyalin Tag Shorts")
                 else:
                     st.warning("Data tidak ditemukan.")
         except Exception as e:
