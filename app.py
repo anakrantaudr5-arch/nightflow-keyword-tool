@@ -2,164 +2,154 @@ import streamlit as st
 import requests
 import pandas as pd
 import re
-from datetime import datetime, timedelta
-from collections import Counter
 import os
+from collections import Counter
 
 # ==========================================
-# 1. SETUP & KONFIGURASI UTAMA
+# 1. KONFIGURASI & SECRETS
 # ==========================================
-YOUTUBE_API_KEY = "AIzaSyCLKr1GIScnbX_Dy8re-WGzCoj_qALiyyk"
+# Pastikan nama di bawah ini sama persis dengan yang ada di menu Secrets Anda
+try:
+    YOUTUBE_API_KEY = st.secrets["YOUTUBE_API_KEY"]
+    SAFELINKU_API_KEY = st.secrets["SAFELINKU_API_KEY"]
+except Exception:
+    st.error("⚠️ Secrets belum terdeteksi. Pastikan Anda sudah mengklik 'Save' pada menu Secrets di Streamlit Cloud.")
+    st.stop()
 
-# Nama file sesuai Screenshot (94): nightflow-logo.png.png
-logo_path = "assets/nightflow-logo.png.png"
+logo_path = "nightflow-logo.png.png"
 
 st.set_page_config(
     page_title="Nightflow PRO Researcher",
     page_icon=logo_path if os.path.exists(logo_path) else "🎸",
-    layout="wide"
+    layout="wide",
+    initial_sidebar_state="collapsed"
 )
 
 # ==========================================
-# 2. CSS CUSTOM (NEON PURPLE METAL UI)
+# 2. FUNGSI LOGIKA
 # ==========================================
-st.markdown(f"""
-<style>
-    .stApp {{
-        background: #0c0c0c;
-        background-image: linear-gradient(135deg, #0c0c0c 0%, #1a0014 40%, #0c0010 100%);
-        color: white;
-    }}
-    
-    /* Judul Hero */
-    .hero-title {{
-        font-size: 54px !important;
-        font-weight: 900 !important;
-        text-align: center !important;
-        margin-top: 20px !important;
-        color: #d200ff !important;
-        text-shadow: 0 0 35px #b700ff, 0 0 60px #8a00ff;
-    }}
-    
-    /* Sidebar styling */
-    [data-testid="stSidebar"] {{
-        background-color: rgba(10,10,10,0.95) !important;
-        border-right: 1px solid #3b0050 !important;
-    }}
-    
-    /* Input Styling */
-    .stTextInput input {{
-        text-align: center !important;
-        background-color: #1a1a1a !important;
-        color: white !important;
-        border: 1px solid #d200ff !important;
-        border-radius: 10px !important;
-    }}
-    
-    /* Button Neon */
-    .stButton>button {{
-        width: 100%;
-        background: linear-gradient(90deg, #d200ff, #8a00ff) !important;
-        border: none !important;
-        color: white !important;
-        font-weight: bold !important;
-        padding: 10px !important;
-        border-radius: 12px !important;
-        box-shadow: 0 0 20px rgba(210, 0, 255, 0.4);
-    }}
-</style>
-""", unsafe_allow_html=True)
-
-# ==========================================
-# 3. SIDEBAR (LOGO & INFO)
-# ==========================================
-with st.sidebar:
-    if os.path.exists(logo_path):
-        st.image(logo_path, use_container_width=True)
-    else:
-        st.warning("⚠️ Logo tidak ditemukan di folder assets")
-    
-    st.title("Nightflow Studio")
-    st.caption("v1.0 Pro Edition • Real-time Data")
-    st.divider()
-    st.markdown("### Fitur Utama:")
-    st.markdown("- 🎥 Video Real YouTube\n- 🏷️ Hashtag Asli Deskripsi\n- 📱 Strategi Shorts vs Long")
-
-# ==========================================
-# 4. FUNGSI LOGIKA (API & CLEANER)
-# ==========================================
-def get_youtube_data(query):
+def get_safelink(long_url):
+    api_url = f"https://api.safelinku.com/shorten?key={SAFELINKU_API_KEY}&url={long_url}"
     try:
-        # Search Videos
-        search_url = "https://www.googleapis.com/youtube/v3/search"
-        params = {"part": "id", "q": query, "type": "video", "maxResults": 15, "key": YOUTUBE_API_KEY}
-        video_ids = [item["id"]["videoId"] for item in requests.get(search_url, params=params).json().get("items", [])]
-        
-        if not video_ids: return pd.DataFrame(), []
-
-        # Get Video Details
-        details_url = "https://www.googleapis.com/youtube/v3/videos"
-        params = {"part": "snippet,statistics,contentDetails", "id": ",".join(video_ids), "key": YOUTUBE_API_KEY}
-        items = requests.get(details_url, params=params).json().get("items", [])
-        
-        results, tags_list = [], []
-        for item in items:
-            snip = item["snippet"]
-            stat = item["statistics"]
-            desc = snip.get("description", "")
-            
-            # Perbaikan Regex Hashtag
-            found_tags = re.findall(r"#(\w+)", desc.lower())
-            tags_list.extend(found_tags)
-            
-            results.append({
-                "Judul": snip["title"],
-                "Channel": snip["channelTitle"],
-                "Views": int(stat.get("viewCount", 0)),
-                "Hashtags": " ".join([f"#{t}" for t in dict.fromkeys(found_tags)]),
-                "Link": f"https://youtube.com/watch?v={item['id']}"
-            })
-        return pd.DataFrame(results), tags_list
+        res = requests.get(api_url).json()
+        if res.get("status") == "success":
+            return res.get("shortenedUrl")
+        return long_url
     except:
-        return pd.DataFrame(), []
+        return long_url
 
-def clean_tags_output(tags, is_shorts=False):
+def clean_tags(tags, is_shorts=False):
     c = Counter(tags)
     top_tags = [f"#{t}" for t, _ in c.most_common(15)]
     if is_shorts:
-        for s in ["#shorts", "#ytshorts", "#shortsvideo"]:
+        for s in ["#shorts", "#ytshorts"]:
             if s not in top_tags: top_tags.append(s)
     return " ".join(top_tags[:15])
 
 # ==========================================
-# 5. HALAMAN UTAMA (USER INTERFACE)
+# 3. UI STYLING (CLEAN & NEON)
 # ==========================================
-st.markdown('<h1 class="hero-title">Nightflow Keyword Researcher PRO</h1>', unsafe_allow_html=True)
+st.markdown("""
+    <style>
+    /* Hapus Header & Sidebar */
+    header, [data-testid="stHeader"], .st-emotion-cache-zq5wms, .st-emotion-cache-18ni7ap {
+        visibility: hidden !important; display: none !important; height: 0px !important;
+    }
+    [data-testid="stSidebar"], [data-testid="stSidebarNav"] {
+        display: none !important;
+    }
+    footer { visibility: hidden !important; }
 
-query = st.text_input("", placeholder="Masukkan keyword (misal: pop punk 2000s)")
-col_a, col_b, col_c = st.columns([1,2,1])
-with col_b:
-    btn = st.button("Start Research 🚀")
+    /* Tema Gelap & Margin Atas */
+    .stApp { background: #0c0c0c; color: white; margin-top: -80px; }
+    
+    .neon-title { 
+        color: white;
+        text-shadow: 0 0 10px #d200ff, 0 0 20px #d200ff; 
+        text-align: center; font-weight: 900; font-size: 45px; margin-bottom: 30px;
+    }
 
-if btn and query:
-    with st.spinner("Menarik data dari YouTube..."):
-        df, all_tags = get_youtube_data(query)
-        
-        if not df.empty:
-            st.subheader("🎬 Video Real YouTube + Hashtag ASLI")
-            st.dataframe(df, use_container_width=True, hide_index=True)
-            
-            st.divider()
-            st.subheader("🏷️ HASHTAG FINAL (TINGGAL COPY)")
-            
-            col1, col2 = st.columns(2)
-            with col1:
-                st.info("📺 **LONG VIDEO**")
-                st.code(clean_tags_output(all_tags), language="text")
-            with col2:
-                st.success("📱 **SHORTS**")
-                st.code(clean_tags_output(all_tags, is_shorts=True), language="text")
-        else:
-            st.error("Data tidak ditemukan. Cek keyword atau API Key anda.")
+    /* Tombol Start */
+    .stButton>button { 
+        background: linear-gradient(90deg, #d200ff, #8a00ff) !important; 
+        color: white !important; border:none; width:100%; font-weight:bold; height: 55px; border-radius:15px; 
+    }
 
-st.markdown("<br><hr><center>Nightflow PRO • Final Fixed Version</center>", unsafe_allow_html=True)
+    /* Footer Container */
+    .nightflow-footer-container {
+        margin-top: 350px; /* Jarak sangat jauh ke bawah */
+        padding-bottom: 100px;
+        text-align: center;
+    }
+    .nightflow-footer-neon {
+        font-size: 40px; font-weight: 900; color: white;
+        text-shadow: 0 0 10px #d200ff, 0 0 20px #d200ff, 0 0 30px #d200ff;
+        text-transform: uppercase; letter-spacing: 5px;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
+# --- HEADER (LOGO & JUDUL) ---
+if os.path.exists(logo_path):
+    _, col_logo, _ = st.columns([1.5, 1, 1.5])
+    with col_logo:
+        st.image(logo_path, use_container_width=True)
+
+st.markdown('<h1 class="neon-title">Nightflow Keyword Researcher PRO</h1>', unsafe_allow_html=True)
+
+# --- INPUT USER ---
+query = st.text_input("", placeholder="Masukkan keyword pencarian...")
+
+if st.button("START RESEARCH 🚀") and query:
+    with st.spinner("Mencari data terbaik untuk Anda..."):
+        try:
+            # 1. YouTube Search
+            search_url = "https://www.googleapis.com/youtube/v3/search"
+            s_params = {"part": "id", "q": query, "type": "video", "maxResults": 10, "key": YOUTUBE_API_KEY}
+            search_res = requests.get(search_url, params=s_params).json()
+
+            if "error" in search_res:
+                st.error(f"YouTube API Error: {search_res['error']['message']}")
+            else:
+                v_ids = [i["id"]["videoId"] for i in search_res.get("items", [])]
+
+                if v_ids:
+                    # 2. Detail Video
+                    d_url = "https://www.googleapis.com/youtube/v3/videos"
+                    d_params = {"part": "snippet,statistics", "id": ",".join(v_ids), "key": YOUTUBE_API_KEY}
+                    items = requests.get(d_url, params=d_params).json().get("items", [])
+
+                    results = []
+                    all_tags = []
+                    for item in items:
+                        tags = re.findall(r"#(\w+)", item["snippet"].get("description", "").lower())
+                        all_tags.extend(tags)
+                        link_duit = get_safelink(f"https://youtube.com/watch?v={item['id']}")
+                        results.append({
+                            "Judul Video": item["snippet"]["title"],
+                            "Views": f"{int(item['statistics'].get('viewCount', 0)):,}",
+                            "AKSES VIDEO": link_duit
+                        })
+
+                    # Tampilkan Data
+                    st.subheader("🎬 Hasil Riset")
+                    st.dataframe(pd.DataFrame(results), use_container_width=True)
+
+                    c1, c2 = st.columns(2)
+                    with c1:
+                        st.subheader("🏷️ Tag Long Video")
+                        st.code(clean_tags(all_tags), language="text")
+                    with c2:
+                        st.subheader("📱 Tag Shorts")
+                        st.code(clean_tags(all_tags, is_shorts=True), language="text")
+                else:
+                    st.warning("Tidak ada video ditemukan.")
+        except Exception as e:
+            st.error(f"Terjadi kesalahan: {e}")
+
+# --- FOOTER ---
+st.markdown("""
+    <div class="nightflow-footer-container">
+        <div class="nightflow-footer-neon">NIGHTFLOW PRO</div>
+    </div>
+""", unsafe_allow_html=True)
