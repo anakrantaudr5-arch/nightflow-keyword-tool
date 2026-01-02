@@ -4,16 +4,17 @@ import pandas as pd
 import re
 import os
 from collections import Counter
+from st_copy_to_clipboard import st_copy_to_clipboard
 
 # ==========================================
 # 1. KONFIGURASI & SECRETS
 # ==========================================
-# Pastikan nama di bawah ini sama persis dengan yang ada di menu Secrets Anda
 try:
+    # Membaca key dari Secrets Streamlit Cloud (Sesuai Screenshot 108 Anda)
     YOUTUBE_API_KEY = st.secrets["YOUTUBE_API_KEY"]
     SAFELINKU_API_KEY = st.secrets["SAFELINKU_API_KEY"]
 except Exception:
-    st.error("⚠️ Secrets belum terdeteksi. Pastikan Anda sudah mengklik 'Save' pada menu Secrets di Streamlit Cloud.")
+    st.error("⚠️ Secrets belum terdeteksi. Pastikan Anda sudah mengklik 'Save changes' di menu Secrets.")
     st.stop()
 
 logo_path = "nightflow-logo.png.png"
@@ -47,11 +48,11 @@ def clean_tags(tags, is_shorts=False):
     return " ".join(top_tags[:15])
 
 # ==========================================
-# 3. UI STYLING (CLEAN & NEON)
+# 3. UI STYLING (THEMA NIGHTFLOW PRO)
 # ==========================================
 st.markdown("""
     <style>
-    /* Hapus Header & Sidebar */
+    /* Sembunyikan Header & Sidebar untuk tampilan Mobile Apps */
     header, [data-testid="stHeader"], .st-emotion-cache-zq5wms, .st-emotion-cache-18ni7ap {
         visibility: hidden !important; display: none !important; height: 0px !important;
     }
@@ -60,7 +61,7 @@ st.markdown("""
     }
     footer { visibility: hidden !important; }
 
-    /* Tema Gelap & Margin Atas */
+    /* Tema Gelap & Layout */
     .stApp { background: #0c0c0c; color: white; margin-top: -80px; }
     
     .neon-title { 
@@ -69,15 +70,15 @@ st.markdown("""
         text-align: center; font-weight: 900; font-size: 45px; margin-bottom: 30px;
     }
 
-    /* Tombol Start */
+    /* Gaya Tombol */
     .stButton>button { 
         background: linear-gradient(90deg, #d200ff, #8a00ff) !important; 
         color: white !important; border:none; width:100%; font-weight:bold; height: 55px; border-radius:15px; 
     }
 
-    /* Footer Container */
+    /* Footer Nightflow PRO (Teks 40px) */
     .nightflow-footer-container {
-        margin-top: 350px; /* Jarak sangat jauh ke bawah */
+        margin-top: 350px; 
         padding-bottom: 100px;
         text-align: center;
     }
@@ -89,7 +90,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- HEADER (LOGO & JUDUL) ---
+# --- LOGO & JUDUL ---
 if os.path.exists(logo_path):
     _, col_logo, _ = st.columns([1.5, 1, 1.5])
     with col_logo:
@@ -97,13 +98,13 @@ if os.path.exists(logo_path):
 
 st.markdown('<h1 class="neon-title">Nightflow Keyword Researcher PRO</h1>', unsafe_allow_html=True)
 
-# --- INPUT USER ---
+# --- AREA INPUT ---
 query = st.text_input("", placeholder="Masukkan keyword pencarian...")
 
 if st.button("START RESEARCH 🚀") and query:
-    with st.spinner("Mencari data terbaik untuk Anda..."):
+    with st.spinner("Mereset data terbaik..."):
         try:
-            # 1. YouTube Search
+            # Panggil YouTube API
             search_url = "https://www.googleapis.com/youtube/v3/search"
             s_params = {"part": "id", "q": query, "type": "video", "maxResults": 10, "key": YOUTUBE_API_KEY}
             search_res = requests.get(search_url, params=s_params).json()
@@ -114,7 +115,6 @@ if st.button("START RESEARCH 🚀") and query:
                 v_ids = [i["id"]["videoId"] for i in search_res.get("items", [])]
 
                 if v_ids:
-                    # 2. Detail Video
                     d_url = "https://www.googleapis.com/youtube/v3/videos"
                     d_params = {"part": "snippet,statistics", "id": ",".join(v_ids), "key": YOUTUBE_API_KEY}
                     items = requests.get(d_url, params=d_params).json().get("items", [])
@@ -131,19 +131,26 @@ if st.button("START RESEARCH 🚀") and query:
                             "AKSES VIDEO": link_duit
                         })
 
-                    # Tampilkan Data
+                    # Tampilkan Tabel
                     st.subheader("🎬 Hasil Riset")
                     st.dataframe(pd.DataFrame(results), use_container_width=True)
 
+                    st.markdown("---")
                     c1, c2 = st.columns(2)
+                    
                     with c1:
                         st.subheader("🏷️ Tag Long Video")
-                        st.code(clean_tags(all_tags), language="text")
+                        tags_long = clean_tags(all_tags)
+                        st.code(tags_long, language="text")
+                        st_copy_to_clipboard(tags_long, before_text="Salin Tag 📋", after_text="Tersalin! ✅")
+
                     with c2:
                         st.subheader("📱 Tag Shorts")
-                        st.code(clean_tags(all_tags, is_shorts=True), language="text")
+                        tags_shorts = clean_tags(all_tags, is_shorts=True)
+                        st.code(tags_shorts, language="text")
+                        st_copy_to_clipboard(tags_shorts, before_text="Salin Tag Shorts 📋", after_text="Tersalin! ✅")
                 else:
-                    st.warning("Tidak ada video ditemukan.")
+                    st.warning("Data tidak ditemukan.")
         except Exception as e:
             st.error(f"Terjadi kesalahan: {e}")
 
