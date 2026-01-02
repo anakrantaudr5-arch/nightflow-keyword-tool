@@ -10,11 +10,12 @@ from collections import Counter
 # ==========================================
 YOUTUBE_API_KEY = st.secrets["YOUTUBE_API_KEY"]
 SAFELINKU_API_KEY = st.secrets["SAFELINKU_API_KEY"]
-logo_path = "nightflow-logo.png.png"
+
+logo_path = "assets/nightflow-logo.png"
 
 st.set_page_config(
     page_title="Nightflow PRO Researcher",
-    page_icon=logo_path if os.path.exists(logo_path) else "🎸",
+    page_icon="🎸",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
@@ -25,126 +26,184 @@ st.set_page_config(
 def get_safelink(long_url):
     api_url = f"https://api.safelinku.com/shorten?key={SAFELINKU_API_KEY}&url={long_url}"
     try:
-        res = requests.get(api_url).json()
+        res = requests.get(api_url, timeout=10).json()
         if res.get("status") == "success":
             return res.get("shortenedUrl")
         return long_url
-    except:
+    except Exception:
         return long_url
+
 
 def clean_tags(tags, is_shorts=False):
     c = Counter(tags)
     top_tags = [f"#{t}" for t, _ in c.most_common(15)]
     if is_shorts:
         for s in ["#shorts", "#ytshorts"]:
-            if s not in top_tags: top_tags.append(s)
+            if s not in top_tags:
+                top_tags.append(s)
     return " ".join(top_tags[:15])
 
 # ==========================================
-# 3. UI STYLING (HAPUS HEADER & ATUR FOOTER)
+# 3. UI STYLING (FULL REPLACE)
 # ==========================================
 st.markdown("""
-    <style>
-    /* Sembunyikan Header & Sidebar Streamlit */
-    header, [data-testid="stHeader"], .st-emotion-cache-zq5wms, .st-emotion-cache-18ni7ap {
-        visibility: hidden !important; display: none !important; height: 0px !important;
-    }
-    [data-testid="stSidebar"], [data-testid="stSidebarNav"] {
-        display: none !important;
-    }
-    footer { visibility: hidden !important; }
+<style>
+/* Hilangkan header, sidebar, footer Streamlit */
+header, footer, [data-testid="stHeader"], [data-testid="stSidebar"] {
+    display: none !important;
+}
 
-    /* Tema Gelap */
-    .stApp { background: #0c0c0c; color: white; margin-top: -80px; }
-    
-    .neon-title { 
-        color: white;
-        text-shadow: 0 0 10px #d200ff, 0 0 20px #d200ff; 
-        text-align: center; font-weight: 900; font-size: 45px; margin-bottom: 30px;
-    }
+/* Background utama */
+.stApp {
+    background: radial-gradient(circle at top, #1a001f 0%, #0c0c0c 45%, #050505 100%);
+    color: white;
+    margin-top: -80px;
+}
 
-    /* Gaya Tombol Start Research */
-    .stButton>button { 
-        background: linear-gradient(90deg, #d200ff, #8a00ff) !important; 
-        color: white !important; border:none; width:100%; font-weight:bold; height: 55px; border-radius:15px; 
-    }
+/* Judul Neon */
+.neon-title {
+    text-align: center;
+    font-size: 46px;
+    font-weight: 900;
+    color: #ffffff;
+    text-shadow:
+        0 0 10px #d200ff,
+        0 0 25px #b000ff,
+        0 0 45px #7a00ff;
+    margin-bottom: 30px;
+}
 
-    /* Footer Nightflow PRO (Jarak 300px, Ukuran 40px) */
-    .nightflow-footer-container {
-        margin-top: 300px;
-        padding-bottom: 100px;
-        text-align: center;
-    }
-    .nightflow-footer-neon {
-        font-size: 40px; font-weight: 900; color: white;
-        text-shadow: 0 0 10px #d200ff, 0 0 20px #d200ff;
-        text-transform: uppercase; letter-spacing: 5px;
-    }
-    </style>
+/* Input */
+input {
+    text-align: center !important;
+    font-size: 18px !important;
+    border-radius: 10px !important;
+}
+
+/* Tombol */
+.stButton>button {
+    background: linear-gradient(90deg, #d200ff, #8a00ff) !important;
+    color: white !important;
+    border: none;
+    width: 100%;
+    height: 55px;
+    font-size: 18px;
+    font-weight: bold;
+    border-radius: 14px;
+    box-shadow: 0 0 25px rgba(210,0,255,0.6);
+}
+
+.stButton>button:hover {
+    transform: scale(1.05);
+    background: linear-gradient(90deg, #e600ff, #a100ff) !important;
+}
+
+/* Footer */
+.nightflow-footer-container {
+    margin-top: 300px;
+    padding-bottom: 100px;
+    text-align: center;
+}
+
+.nightflow-footer-neon {
+    font-size: 40px;
+    font-weight: 900;
+    letter-spacing: 5px;
+    color: white;
+    text-shadow:
+        0 0 10px #d200ff,
+        0 0 30px #a100ff;
+}
+</style>
 """, unsafe_allow_html=True)
 
-# --- BAGIAN LOGO & JUDUL ---
+# ==========================================
+# 4. HERO LOGO + TITLE
+# ==========================================
 if os.path.exists(logo_path):
     _, col_logo, _ = st.columns([1.5, 1, 1.5])
     with col_logo:
         st.image(logo_path, use_container_width=True)
 
-st.markdown('<h1 class="neon-title">Nightflow Keyword Researcher PRO</h1>', unsafe_allow_html=True)
+st.markdown(
+    '<h1 class="neon-title">Nightflow Keyword Researcher PRO</h1>',
+    unsafe_allow_html=True
+)
 
-# --- BAGIAN INPUT ---
-query = st.text_input("", placeholder="Masukkan keyword pencarian...")
+# ==========================================
+# 5. INPUT
+# ==========================================
+query = st.text_input("", placeholder="Masukkan keyword pencarian YouTube...")
 
-if st.button("START RESEARCH 🚀") and query:
-    with st.spinner("Sedang memproses data..."):
+start = st.button("START RESEARCH 🚀")
+
+# ==========================================
+# 6. MAIN LOGIC
+# ==========================================
+if start and query:
+    with st.spinner("🔎 Mengambil data YouTube..."):
         try:
-            # 1. Panggil YouTube Search API
             search_url = "https://www.googleapis.com/youtube/v3/search"
-            s_params = {"part": "id", "q": query, "type": "video", "maxResults": 10, "key": YOUTUBE_API_KEY}
-            search_res = requests.get(search_url, params=s_params).json()
+            search_params = {
+                "part": "id",
+                "q": query,
+                "type": "video",
+                "maxResults": 10,
+                "key": YOUTUBE_API_KEY
+            }
+
+            search_res = requests.get(search_url, params=search_params, timeout=10).json()
 
             if "error" in search_res:
-                st.error(f"YouTube API Error: {search_res['error']['message']}")
+                st.error(search_res["error"]["message"])
             else:
-                v_ids = [i["id"]["videoId"] for i in search_res.get("items", [])]
+                video_ids = [i["id"]["videoId"] for i in search_res.get("items", [])]
 
-                if v_ids:
-                    # 2. Panggil Detail Video API
-                    d_url = "https://www.googleapis.com/youtube/v3/videos"
-                    d_params = {"part": "snippet,statistics", "id": ",".join(v_ids), "key": YOUTUBE_API_KEY}
-                    items = requests.get(d_url, params=d_params).json().get("items", [])
+                if not video_ids:
+                    st.warning("Tidak ada video ditemukan.")
+                else:
+                    detail_url = "https://www.googleapis.com/youtube/v3/videos"
+                    detail_params = {
+                        "part": "snippet,statistics",
+                        "id": ",".join(video_ids),
+                        "key": YOUTUBE_API_KEY
+                    }
 
-                    results = []
+                    items = requests.get(detail_url, params=detail_params, timeout=10).json().get("items", [])
+
+                    rows = []
                     all_tags = []
+
                     for item in items:
-                        tags = re.findall(r"#(\w+)", item["snippet"].get("description", "").lower())
+                        desc = item["snippet"].get("description", "").lower()
+                        tags = re.findall(r"#(\w+)", desc)
                         all_tags.extend(tags)
-                        link_duit = get_safelink(f"https://youtube.com/watch?v={item['id']}")
-                        results.append({
+
+                        rows.append({
                             "Judul Video": item["snippet"]["title"],
                             "Views": f"{int(item['statistics'].get('viewCount', 0)):,}",
-                            "AKSES VIDEO": link_duit
+                            "Link": get_safelink(f"https://youtube.com/watch?v={item['id']}")
                         })
 
-                    # Tampilkan Tabel Hasil
-                    st.subheader("🎬 Hasil Riset")
-                    st.dataframe(pd.DataFrame(results), use_container_width=True)
+                    st.subheader("🎬 Hasil Riset YouTube")
+                    st.dataframe(pd.DataFrame(rows), use_container_width=True)
 
-                    c1, c2 = st.columns(2)
-                    with c1:
-                        st.subheader("🏷️ Tag Long Video")
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        st.subheader("🏷️ Hashtag Long Video")
                         st.code(clean_tags(all_tags), language="text")
-                    with c2:
-                        st.subheader("📱 Tag Shorts")
+                    with col2:
+                        st.subheader("📱 Hashtag Shorts")
                         st.code(clean_tags(all_tags, is_shorts=True), language="text")
-                else:
-                    st.warning("Data tidak ditemukan.")
-        
+
         except Exception as e:
             st.error(f"Terjadi kesalahan teknis: {e}")
 
-# --- BAGIAN FOOTER ---
+# ==========================================
+# 7. FOOTER
+# ==========================================
 st.markdown("""
-    <div class="nightflow-footer-container">
-        <div class="nightflow-footer-neon">NIGHTFLOW PRO</div>
-    </div>
+<div class="nightflow-footer-container">
+    <div class="nightflow-footer-neon">NIGHTFLOW PRO</div>
+</div>
 """, unsafe_allow_html=True)
