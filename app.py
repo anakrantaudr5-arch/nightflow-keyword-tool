@@ -20,7 +20,7 @@ st.set_page_config(
 )
 
 # ==========================================
-# 2. FUNGSI LOGIKA (MONETISASI & HASHTAG)
+# 2. FUNGSI LOGIKA
 # ==========================================
 def get_safelink(long_url):
     api_url = f"https://api.safelinku.com/shorten?key={SAFELINKU_API_KEY}&url={long_url}"
@@ -45,7 +45,7 @@ def clean_tags(tags, is_shorts=False):
 # ==========================================
 st.markdown("""
     <style>
-    /* Hapus Header, Menu, & Sidebar */
+    /* Sembunyikan Header & Sidebar */
     header, [data-testid="stHeader"], .st-emotion-cache-zq5wms, .st-emotion-cache-18ni7ap {
         visibility: hidden !important; display: none !important; height: 0px !important;
     }
@@ -54,7 +54,7 @@ st.markdown("""
     }
     footer { visibility: hidden !important; }
 
-    /* Tema Gelap Utama */
+    /* Tema Gelap */
     .stApp { background: #0c0c0c; color: white; margin-top: -80px; }
     
     .neon-title { 
@@ -63,13 +63,13 @@ st.markdown("""
         text-align: center; font-weight: 900; font-size: 45px; margin-bottom: 30px;
     }
 
-    /* Tombol Start Research */
+    /* Tombol Utama */
     .stButton>button { 
         background: linear-gradient(90deg, #d200ff, #8a00ff) !important; 
         color: white !important; border:none; width:100%; font-weight:bold; height: 55px; border-radius:15px; 
     }
 
-    /* Box Subscribe Merah */
+    /* Box Peringatan Subscribe */
     .sub-box { 
         background-color: #1e1e1e; padding: 25px; border-radius: 20px; 
         border: 2px solid #ff0000; text-align: center; margin-bottom: 25px; 
@@ -106,6 +106,69 @@ if st.button("START RESEARCH 🚀") and query:
     # Penulisan HTML Box Subscribe (Sudah diperbaiki indentasinya)
     st.markdown(f"""
         <div class="sub-box">
+            <h2 style="color: #ff0000; margin-top: 0;">🔴 SUBSCRIBE REQUIRED</h2>
+            <p>Subscribe channel Nightflow Pop Punk untuk membuka hasil riset.</p>
+            <a href="{sub_link}" target="_blank">
+                <button style="background-color: #ff0000; color: white; border: none; padding: 12px 25px; border-radius: 8px; font-weight: bold; cursor: pointer;">
+                    KLIK UNTUK SUBSCRIBE
+                </button>
+            </a>
+        </div>
+    """, unsafe_allow_html=True)
+
+    if st.checkbox("Saya sudah subscribe ✅"):
+        with st.spinner("Sedang meriset YouTube..."):
+            try:
+                # 1. API YouTube Search
+                search_url = "https://www.googleapis.com/youtube/v3/search"
+                s_params = {"part": "id", "q": query, "type": "video", "maxResults": 10, "key": YOUTUBE_API_KEY}
+                search_res = requests.get(search_url, params=s_params).json()
+
+                if "error" in search_res:
+                    st.error(f"YouTube API Error: {search_res['error']['message']}")
+                else:
+                    v_ids = [i["id"]["videoId"] for i in search_res.get("items", [])]
+
+                    if v_ids:
+                        # 2. API Detail Video
+                        d_url = "https://www.googleapis.com/youtube/v3/videos"
+                        d_params = {"part": "snippet,statistics", "id": ",".join(v_ids), "key": YOUTUBE_API_KEY}
+                        items = requests.get(d_url, params=d_params).json().get("items", [])
+
+                        results = []
+                        all_tags = []
+                        for item in items:
+                            tags = re.findall(r"#(\w+)", item["snippet"].get("description", "").lower())
+                            all_tags.extend(tags)
+                            link_duit = get_safelink(f"https://youtube.com/watch?v={item['id']}")
+                            results.append({
+                                "Judul Video": item["snippet"]["title"],
+                                "Views": f"{int(item['statistics'].get('viewCount', 0)):,}",
+                                "AKSES VIDEO": link_duit
+                            })
+
+                        st.subheader("🎬 Hasil Riset")
+                        st.dataframe(pd.DataFrame(results), use_container_width=True)
+
+                        c1, c2 = st.columns(2)
+                        with c1:
+                            st.subheader("🏷️ Tag Long Video")
+                            st.code(clean_tags(all_tags), language="text")
+                        with c2:
+                            st.subheader("📱 Tag Shorts")
+                            st.code(clean_tags(all_tags, is_shorts=True), language="text")
+                    else:
+                        st.warning("Data tidak ditemukan.")
+            
+            except Exception as e:
+                st.error(f"Kesalahan: {e}")
+
+# --- BAGIAN FOOTER (Tetap di bawah) ---
+st.markdown("""
+    <div class="nightflow-footer-container">
+        <div class="nightflow-footer-neon">NIGHTFLOW PRO</div>
+    </div>
+""", unsafe_allow_html=True)
             <h2 style="color: #ff0000; margin-top: 0;">🔴 SUBSCRIBE REQUIRED</h2>
             <p>Subscribe channel Nightflow Pop Punk untuk membuka hasil riset.</p>
             <a href="{sub_link}" target="_blank">
@@ -284,5 +347,6 @@ st.markdown("""
         <div class="nightflow-footer-neon">NIGHTFLOW PRO</div>
     </div>
 """, unsafe_allow_html=True)
+
 
 
